@@ -1,0 +1,46 @@
+.gradle
+/local.properties
+/.idea
+.DS_Store
+
+/gradle
+gradlew
+gradlew.bat
+
+**/build
+
+*.iml
+
+# built application files
+*.apk
+*.ap_
+
+# files for the dex VM
+*.dex
+
+# Java class files
+*.class
+
+# generated files
+bin/
+gen/
+build/
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Project configuration file (target-sdk-version)
+.DS_Store
+project.properties
+out
+
+# Eclipse project files
+.classpath
+.project
+
+# Intellij project files
+*.iml
+*.ipr
+*.iws
+.idea/
+.gradle/
