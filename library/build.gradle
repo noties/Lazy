@@ -31,3 +31,7 @@ afterEvaluate {
         }
     }
 }
+
+if (project.hasProperty('mavenRelease')) {
+    apply from: '../common-java-publishing-maven.gradle'
+}
