@@ -3,10 +3,6 @@
 /.idea
 .DS_Store
 
-/gradle
-gradlew
-gradlew.bat
-
 **/build
 
 *.iml
