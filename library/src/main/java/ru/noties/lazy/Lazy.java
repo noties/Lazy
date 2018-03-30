@@ -14,7 +14,7 @@ import java.lang.reflect.Proxy;
  * @param <T> type of the value that this instance holds
  * @see Provider
  */
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "unused"})
 public abstract class Lazy<T> {
 
     /**
@@ -29,9 +29,13 @@ public abstract class Lazy<T> {
         T provide();
     }
 
+    public interface Visitor<T> {
+        void visit(@NonNull Lazy<T> lazy);
+    }
+
     @NonNull
     public static <T> Lazy<T> of(@NonNull Provider<T> provider) {
-        return new Simple<>(provider);
+        return new Impl<>(provider);
     }
 
     @NonNull
@@ -49,13 +53,7 @@ public abstract class Lazy<T> {
         return of(provider).hide(type);
     }
 
-    /**
-     * A method to return a value of type T. Provider will be called once, no matter if
-     * it returned null.
-     *
-     * @return a value from {{@link #provider}} or a cached one {@link #value}, can be null
-     * if provider returned null
-     */
+
     @NonNull
     public abstract T get();
 
@@ -92,13 +90,19 @@ public abstract class Lazy<T> {
         );
     }
 
-    private static class Simple<T> extends Lazy<T> {
+    @NonNull
+    public final Lazy<T> accept(@NonNull Visitor<T> visitor) {
+        visitor.visit(this);
+        return this;
+    }
+
+    private static class Impl<T> extends Lazy<T> {
 
         private final Provider<T> provider;
 
         private T value;
 
-        Simple(@NonNull Provider<T> provider) {
+        Impl(@NonNull Provider<T> provider) {
             this.provider = provider;
         }
 
