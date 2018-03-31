@@ -174,9 +174,17 @@ public abstract class Lazy<T> {
         @NonNull
         @Override
         public T get() {
+
             T out = value;
+
             if (out == null) {
+
                 out = value = provider.provide();
+
+                //noinspection ConstantConditions
+                if (out == null) {
+                    throw new IllegalStateException("Provider returned null");
+                }
             }
             return out;
         }

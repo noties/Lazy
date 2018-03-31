@@ -7,7 +7,10 @@ targetCompatibility = JavaVersion.VERSION_1_7
 sourceCompatibility = JavaVersion.VERSION_1_7
 
 dependencies {
+
     compile SUPPORT_ANNOTATIONS
+
+    testCompile TEST_JUNIT
 }
 
 if (project.hasProperty('release')) {
