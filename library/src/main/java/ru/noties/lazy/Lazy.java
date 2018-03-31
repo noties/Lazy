@@ -7,53 +7,102 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
 /**
- * A simple class that postpones a value initialization until first call. After value is
- * computed, a cached value will be returned. Please note that there will be one call to
- * provider, returned value will be cached (even in case of null) and returned during subsequent calls
+ * A simple class that postpones a value initialization until first requested.
  *
- * @param <T> type of the value that this instance holds
- * @see Provider
+ * @see #of(Provider)
+ * @see #ofSynchronized(Provider)
+ * @see #ofSynchronized(Lazy)
+ * @see #ofHidden(Class, Provider)
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public abstract class Lazy<T> {
 
-    /**
-     * An interface that defines a provider for a value
-     * that {@link Lazy} should return.
-     *
-     * @param <T>
-     */
     public interface Provider<T> {
 
         @NonNull
         T provide();
     }
 
+    /**
+     * @since 1.1.0
+     */
     public interface Visitor<T> {
         void visit(@NonNull Lazy<T> lazy);
     }
 
+    /**
+     * Factory method to obtain simple {@link Lazy} instance. Returned instance is not thread safe.
+     * For thread-safe implementation use {@link #ofSynchronized(Lazy)} or {@link #ofSynchronized(Provider)}
+     *
+     * @param provider {@link Provider}
+     * @return an instance of {@link Lazy}
+     * @see #ofSynchronized(Provider)
+     * @see #ofSynchronized(Lazy)
+     * @see #ofHidden(Class, Provider)
+     * @since 1.1.0
+     */
     @NonNull
     public static <T> Lazy<T> of(@NonNull Provider<T> provider) {
         return new Impl<>(provider);
     }
 
+    /**
+     * Factory method to obtain synchronized instance of {@link Lazy}
+     *
+     * @param provider {@link Provider}
+     * @return a synchronized instance of {@link Lazy}
+     * @see #of(Provider)
+     * @see #ofSynchronized(Lazy)
+     * @see #ofHidden(Class, Provider)
+     * @since 1.1.0
+     */
     @NonNull
     public static <T> Lazy<T> ofSynchronized(@NonNull Provider<T> provider) {
         return ofSynchronized(of(provider));
     }
 
+    /**
+     * Factory method to obtain synchronized instance of {@link Lazy}
+     *
+     * @param lazy {@link Lazy} to synchronize
+     * @return synchronized instance of {@link Lazy} (NB, different instance from what was supplied
+     * is returned)
+     * @see #of(Provider)
+     * @see #ofSynchronized(Provider)
+     * @see #ofHidden(Class, Provider)
+     * @since 1.1.0
+     */
     @NonNull
     public static <T> Lazy<T> ofSynchronized(@NonNull Lazy<T> lazy) {
         return new Synchronized<>(lazy);
     }
 
+    /**
+     * Factory method to obtain a {@link Lazy} instance that is hidden by real interface type, so there
+     * is no need to manually calling `get` on {@link Lazy} instance (or actually hold a reference to it).
+     * {@code final CharSequence cs = Lazy.ofHidden(CharSequence.class, () -> "I'm sooo lazy!"); }
+     * <p>
+     * Please note, that this works <em>ONLY</em> for interface types. Other types (simple classes,
+     * abstract classes, enums, etc) will throw an IllegalStateException. This is due to the fact
+     * that underneath {@link Lazy} is using `java.lang.reflect.Proxy` that can work only with interfaces.
+     *
+     * @param type     class of the main type
+     * @param provider {@link Provider}
+     * @return hidden instance of wrapped into {@link Lazy} type
+     * @see #hide(Class)
+     * @since 1.1.0
+     */
     @NonNull
     public static <T> T ofHidden(@NonNull Class<T> type, @NonNull Provider<T> provider) {
         return of(provider).hide(type);
     }
 
-
+    /**
+     * @return a value that this {@link Lazy} instance holds. As it postpones initialization,
+     * supplied during creation {@link Provider} must be called exactly once. So each call of this method
+     * must return the same value
+     * @see #hasValue()
+     */
     @NonNull
     public abstract T get();
 
@@ -66,7 +115,17 @@ public abstract class Lazy<T> {
      */
     public abstract boolean hasValue();
 
-
+    /**
+     * Provides ability to `hide` wrapped type if wrapped type is an interface.
+     * Foe example: {@code final CharSequence cs = Lazy.ofHidden(CharSequence.class, () -> "I'm sooo lazy!"); }.
+     * So there is no need to explicitly call `lazy.get()` each time, just use interface normally.
+     * Please note that if this instance {@link #hasValue()} this value will be returned
+     *
+     * @param type of `T`
+     * @return hidden instance of `T`
+     * @throws IllegalStateException if supplied `type` is not an interface
+     * @since 1.1.0
+     */
     @NonNull
     public final T hide(@NonNull Class<T> type) throws IllegalStateException {
 
@@ -90,12 +149,18 @@ public abstract class Lazy<T> {
         );
     }
 
+    /**
+     * @param visitor {@link Visitor}
+     * @return self for chaining
+     * @since 1.1.0
+     */
     @NonNull
     public final Lazy<T> accept(@NonNull Visitor<T> visitor) {
         visitor.visit(this);
         return this;
     }
 
+    // @since 1.1.0
     private static class Impl<T> extends Lazy<T> {
 
         private final Provider<T> provider;
@@ -122,6 +187,7 @@ public abstract class Lazy<T> {
         }
     }
 
+    // @since 1.1.0
     private static class Synchronized<T> extends Lazy<T> {
 
         private final Object lock = new Object();
@@ -148,6 +214,7 @@ public abstract class Lazy<T> {
         }
     }
 
+    // @since 1.1.0
     private static class LazyInvocationHandler implements InvocationHandler {
 
         private final Lazy lazy;
